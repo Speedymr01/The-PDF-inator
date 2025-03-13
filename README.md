@@ -56,4 +56,4 @@ Logs are saved in the `logs` directory. Check the log files for detailed informa
 
 ## License
 
-This project is licensed under the MIT License.
+This project is licensed under the CC BY-NC-ND 4.0 (Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International) License.
