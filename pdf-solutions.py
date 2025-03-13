@@ -40,6 +40,7 @@ def split_pdf(input_path, output_dir, pages_per_split):
         pages_per_split (int): Number of pages to include in each split file.
     """
     os.makedirs(output_dir, exist_ok=True)
+    logging.info(f"Splitting PDF: {input_path} into {pages_per_split}-page files.")
 
     reader = PdfReader(input_path)
     total_pages = len(reader.pages)
@@ -58,7 +59,7 @@ def split_pdf(input_path, output_dir, pages_per_split):
         with open(output_path, "wb") as output_file:
             writer.write(output_file)
 
-        logging.info(f"Created split PDF: {output_path}")
+        logging.info(f"Created split PDF: {output_path} with {end_page - start_page} pages")
 
         start_page = end_page
         file_number += 1
@@ -88,7 +89,7 @@ def ocr_pdf(pdf_path, output_path):
         logging.info(f"OCR completed for {pdf_path}. Output saved to {output_txt_file}")
 
     except (fitz.FileDataError, fitz.FileNotFoundError, fitz.PdfError) as e:
-        logging.error(f"Error during OCR: {e}")
+        logging.error(f"Error during OCR for {pdf_path}: {e}")
 
 def process_pdf(input_pdf):
     """
@@ -145,6 +146,7 @@ def monitor_directory(input_dir):
             for filename in os.listdir(input_dir):
                 if filename.endswith(".pdf") and filename not in processed_files:
                     input_pdf = os.path.join(input_dir, filename)
+                    logging.info(f"New file detected: {input_pdf}")
                     process_pdf(input_pdf)
                     processed_files.add(filename)
                     save_processed_file(filename)
