@@ -9,6 +9,8 @@ import time
 LOG_DIR = 'logs'
 PROCESSED_FILES_PATH = 'processed.txt'
 SLEEP_INTERVAL = 10  # seconds
+INPUT_DIR = './pdfs'
+OUTPUT_DIR = './output'
 
 # Configure logging with dynamic filename
 log_filename = os.path.join(LOG_DIR, f'pdf_processing_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log')
@@ -101,7 +103,7 @@ def process_pdf(input_pdf, pages_per_split):
         input_file_name = os.path.splitext(os.path.basename(input_pdf))[0]
         
         # Set the output directory to the ./output/ folder
-        output_dir = os.path.join(".", "output", f"SPLIT - {input_file_name}")
+        output_dir = os.path.join(OUTPUT_DIR, f"SPLIT - {input_file_name}")
 
         split_pdf(input_pdf, output_dir, pages_per_split)
         logging.info(f"PDF split successfully! Files are located in: {output_dir}")
@@ -140,8 +142,8 @@ def monitor_directory(input_dir, pages_per_split):
         time.sleep(SLEEP_INTERVAL)  # Check for new files every SLEEP_INTERVAL seconds
 
 if __name__ == "__main__":
-    input_dir = input("Enter the path to the input directory: ")
-    logging.info(f"Input directory: {input_dir}")
+    logging.info(f"Input directory: {INPUT_DIR}")
+    logging.info(f"Output directory: {OUTPUT_DIR}")
 
     # Get user input for the number of pages per split
     while True:
@@ -155,4 +157,4 @@ if __name__ == "__main__":
             print("Invalid input. Please enter a number.")
     logging.info(f"Pages per split: {pages_per_split}")
 
-    monitor_directory(input_dir, pages_per_split)
+    monitor_directory(INPUT_DIR, pages_per_split)
