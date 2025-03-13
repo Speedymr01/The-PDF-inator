@@ -1,6 +1,6 @@
 import os
 from pypdf import PdfReader, PdfWriter
-import subprocess  # For running tesseract
+import fitz  # PyMuPDF for text extraction
 
 def split_pdf(input_path, output_dir, pages_per_split):
     """
@@ -36,22 +36,30 @@ def split_pdf(input_path, output_dir, pages_per_split):
 
 def ocr_pdf(pdf_path, output_path):
     """
-    Performs OCR on a PDF file using Tesseract.
+    Extracts text from a PDF file using PyMuPDF.
 
     Args:
         pdf_path (str): Path to the input PDF file.
-        output_path (str): Path to save the OCRed PDF file (will be a text file).
+        output_path (str): Path to save the extracted text file.
     """
     try:
-        # Use Tesseract to perform OCR.  Assumes tesseract is in your PATH.
-        subprocess.run(["tesseract", pdf_path, output_path, "pdf"], check=True)
-        print(f"OCR completed for {pdf_path}. Output saved to {output_path}.pdf")
+        # Open the PDF
+        pdf_document = fitz.open(pdf_path)
+        text = ""
 
-    except subprocess.CalledProcessError as e:
+        # Extract text from each page
+        for page_number in range(len(pdf_document)):
+            page = pdf_document[page_number]
+            text += page.get_text() + "\n"
+
+        # Save the extracted text to a file
+        with open(output_path + ".txt", "w", encoding="utf-8") as f:
+            f.write(text)
+
+        print(f"OCR completed for {pdf_path}. Output saved to {output_path}.txt")
+
+    except Exception as e:
         print(f"Error during OCR: {e}")
-        print("Make sure Tesseract is installed and in your system's PATH.")
-    except FileNotFoundError:
-        print("Error: Tesseract is not found.  Please install it and ensure it's in your system's PATH.")
 
 if __name__ == "__main__":
     # Get user input for the PDF file
@@ -76,16 +84,20 @@ if __name__ == "__main__":
     output_dir = os.path.join(downloads_path, f"SPLIT - {file_name}")
 
     split_pdf(input_pdf, output_dir, pages_per_split)
-    print("PDF split successfully!")
+    print(f"PDF split successfully! Files are located in: {output_dir}")
 
     # Ask if the user wants to perform OCR
     ocr_choice = input("Do you want to perform OCR on the split files? (y/n): ").lower()
     if ocr_choice == 'y':
+        ocr_output_dir = os.path.join(output_dir, "ocr_output")
+        if not os.path.exists(ocr_output_dir):
+            os.makedirs(ocr_output_dir)
+        print(f"OCR output will be saved in: {ocr_output_dir}")
+
         for filename in os.listdir(output_dir):
             if filename.endswith(".pdf") and filename.startswith("split_"):
                 pdf_path = os.path.join(output_dir, filename)
                 output_base = os.path.splitext(filename)[0]  # Remove .pdf extension
-                output_txt_path = os.path.join(output_dir, output_base) # Output path for OCR'd text
+                output_txt_path = os.path.join(ocr_output_dir, output_base)  # Output path for OCR'd text, inside ocr_output dir
 
                 ocr_pdf(pdf_path, output_txt_path)
-                
