@@ -3,12 +3,30 @@ import logging
 from datetime import datetime
 from pypdf import PdfReader, PdfWriter
 import fitz  # PyMuPDF for text extraction
+import time
+
+# Constants
+LOG_DIR = 'logs'
+PROCESSED_FILES_PATH = 'processed.txt'
+SLEEP_INTERVAL = 10  # seconds
 
 # Configure logging with dynamic filename
-log_filename = f'logs/pdf_processing_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log'
+log_filename = os.path.join(LOG_DIR, f'pdf_processing_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log')
 os.makedirs(os.path.dirname(log_filename), exist_ok=True)
 logging.basicConfig(filename=log_filename, level=logging.INFO, 
                     format='%(asctime)s - %(levelname)s - %(message)s')
+
+def load_processed_files():
+    """Load the set of processed files from the processed.txt file."""
+    if os.path.exists(PROCESSED_FILES_PATH):
+        with open(PROCESSED_FILES_PATH, 'r') as file:
+            return set(file.read().splitlines())
+    return set()
+
+def save_processed_file(filename):
+    """Save a processed file name to the processed.txt file."""
+    with open(PROCESSED_FILES_PATH, 'a') as file:
+        file.write(filename + '\n')
 
 def split_pdf(input_path, output_dir, pages_per_split):
     """
@@ -70,10 +88,60 @@ def ocr_pdf(pdf_path, output_path):
     except (fitz.FileDataError, fitz.FileNotFoundError, fitz.PdfError) as e:
         logging.error(f"Error during OCR: {e}")
 
+def process_pdf(input_pdf, pages_per_split):
+    """
+    Process a PDF file by splitting it and performing OCR on the split files.
+
+    Args:
+        input_pdf (str): Path to the input PDF file.
+        pages_per_split (int): Number of pages to include in each split file.
+    """
+    try:
+        # Extract the filename from the input path
+        input_file_name = os.path.splitext(os.path.basename(input_pdf))[0]
+        
+        # Set the output directory to the ./output/ folder
+        output_dir = os.path.join(".", "output", f"SPLIT - {input_file_name}")
+
+        split_pdf(input_pdf, output_dir, pages_per_split)
+        logging.info(f"PDF split successfully! Files are located in: {output_dir}")
+
+        # Perform OCR on the split files
+        ocr_output_dir = os.path.join(output_dir, "ocr_output")
+        os.makedirs(ocr_output_dir, exist_ok=True)
+        logging.info(f"OCR output will be saved in: {ocr_output_dir}")
+
+        for filename in [f for f in os.listdir(output_dir) if f.endswith(".pdf") and f.startswith("split_")]:
+            pdf_path = os.path.join(output_dir, filename)
+            ocr_output_base = os.path.splitext(filename)[0]  # Remove .pdf extension
+            output_txt_path = os.path.join(ocr_output_dir, ocr_output_base)  # Output path for OCR'd text, inside ocr_output dir
+
+            ocr_pdf(pdf_path, output_txt_path)
+    except Exception as e:
+        logging.error(f"Error processing PDF {input_pdf}: {e}")
+
+def monitor_directory(input_dir, pages_per_split):
+    """Monitor the input directory for new PDF files and process them if they haven't been processed."""
+    processed_files = load_processed_files()
+
+    while True:
+        try:
+            for filename in os.listdir(input_dir):
+                if filename.endswith(".pdf") and filename not in processed_files:
+                    input_pdf = os.path.join(input_dir, filename)
+                    process_pdf(input_pdf, pages_per_split)
+                    processed_files.add(filename)
+                    save_processed_file(filename)
+                    print(f"Processed {filename}")
+                    logging.info(f"Processed {filename}")
+        except Exception as e:
+            logging.error(f"Error monitoring directory {input_dir}: {e}")
+
+        time.sleep(SLEEP_INTERVAL)  # Check for new files every SLEEP_INTERVAL seconds
+
 if __name__ == "__main__":
-    # Get user input for the PDF file
-    input_pdf = input("Enter the path to the input PDF file: ")
-    logging.info(f"Input PDF file: {input_pdf}")
+    input_dir = input("Enter the path to the input directory: ")
+    logging.info(f"Input directory: {input_dir}")
 
     # Get user input for the number of pages per split
     while True:
@@ -87,27 +155,4 @@ if __name__ == "__main__":
             print("Invalid input. Please enter a number.")
     logging.info(f"Pages per split: {pages_per_split}")
 
-    # Extract the filename from the input path
-    input_file_name = os.path.splitext(os.path.basename(input_pdf))[0]
-    
-    # Set the output directory to the ./output/ folder
-    output_dir = os.path.join(".", "output", f"SPLIT - {input_file_name}")
-
-    split_pdf(input_pdf, output_dir, pages_per_split)
-    print(f"PDF split successfully! Files are located in: {output_dir}")
-    logging.info(f"PDF split successfully! Files are located in: {output_dir}")
-
-    # Ask if the user wants to perform OCR
-    ocr_choice = input("Do you want to perform OCR on the split files? (y/n): ").lower()
-    if ocr_choice == 'y':
-        ocr_output_dir = os.path.join(output_dir, "ocr_output")
-        os.makedirs(ocr_output_dir, exist_ok=True)
-        print(f"OCR output will be saved in: {ocr_output_dir}")
-        logging.info(f"OCR output will be saved in: {ocr_output_dir}")
-
-        for filename in [f for f in os.listdir(output_dir) if f.endswith(".pdf") and f.startswith("split_")]:
-            pdf_path = os.path.join(output_dir, filename)
-            ocr_output_base = os.path.splitext(filename)[0]  # Remove .pdf extension
-            output_txt_path = os.path.join(ocr_output_dir, ocr_output_base)  # Output path for OCR'd text, inside ocr_output dir
-
-            ocr_pdf(pdf_path, output_txt_path)
+    monitor_directory(input_dir, pages_per_split)
