@@ -90,15 +90,26 @@ def ocr_pdf(pdf_path, output_path):
     except (fitz.FileDataError, fitz.FileNotFoundError, fitz.PdfError) as e:
         logging.error(f"Error during OCR: {e}")
 
-def process_pdf(input_pdf, pages_per_split):
+def process_pdf(input_pdf):
     """
     Process a PDF file by splitting it and performing OCR on the split files.
 
     Args:
         input_pdf (str): Path to the input PDF file.
-        pages_per_split (int): Number of pages to include in each split file.
     """
     try:
+        # Get user input for the number of pages per split
+        while True:
+            try:
+                pages_per_split = int(input(f"Enter the number of pages per split for {input_pdf}: "))
+                if pages_per_split > 0:
+                    break
+                else:
+                    print("Please enter a positive number of pages.")
+            except ValueError:
+                print("Invalid input. Please enter a number.")
+        logging.info(f"Pages per split for {input_pdf}: {pages_per_split}")
+
         # Extract the filename from the input path
         input_file_name = os.path.splitext(os.path.basename(input_pdf))[0]
         
@@ -108,21 +119,24 @@ def process_pdf(input_pdf, pages_per_split):
         split_pdf(input_pdf, output_dir, pages_per_split)
         logging.info(f"PDF split successfully! Files are located in: {output_dir}")
 
-        # Perform OCR on the split files
-        ocr_output_dir = os.path.join(output_dir, "ocr_output")
-        os.makedirs(ocr_output_dir, exist_ok=True)
-        logging.info(f"OCR output will be saved in: {ocr_output_dir}")
+        # Ask if the user wants to perform OCR
+        ocr_choice = input(f"Do you want to perform OCR on the split files for {input_pdf}? (y/n): ").lower()
+        if ocr_choice == 'y':
+            # Perform OCR on the split files
+            ocr_output_dir = os.path.join(output_dir, "ocr_output")
+            os.makedirs(ocr_output_dir, exist_ok=True)
+            logging.info(f"OCR output will be saved in: {ocr_output_dir}")
 
-        for filename in [f for f in os.listdir(output_dir) if f.endswith(".pdf") and f.startswith("split_")]:
-            pdf_path = os.path.join(output_dir, filename)
-            ocr_output_base = os.path.splitext(filename)[0]  # Remove .pdf extension
-            output_txt_path = os.path.join(ocr_output_dir, ocr_output_base)  # Output path for OCR'd text, inside ocr_output dir
+            for filename in [f for f in os.listdir(output_dir) if f.endswith(".pdf") and f.startswith("split_")]:
+                pdf_path = os.path.join(output_dir, filename)
+                ocr_output_base = os.path.splitext(filename)[0]  # Remove .pdf extension
+                output_txt_path = os.path.join(ocr_output_dir, ocr_output_base)  # Output path for OCR'd text, inside ocr_output dir
 
-            ocr_pdf(pdf_path, output_txt_path)
+                ocr_pdf(pdf_path, output_txt_path)
     except Exception as e:
         logging.error(f"Error processing PDF {input_pdf}: {e}")
 
-def monitor_directory(input_dir, pages_per_split):
+def monitor_directory(input_dir):
     """Monitor the input directory for new PDF files and process them if they haven't been processed."""
     processed_files = load_processed_files()
 
@@ -131,7 +145,7 @@ def monitor_directory(input_dir, pages_per_split):
             for filename in os.listdir(input_dir):
                 if filename.endswith(".pdf") and filename not in processed_files:
                     input_pdf = os.path.join(input_dir, filename)
-                    process_pdf(input_pdf, pages_per_split)
+                    process_pdf(input_pdf)
                     processed_files.add(filename)
                     save_processed_file(filename)
                     print(f"Processed {filename}")
@@ -145,16 +159,4 @@ if __name__ == "__main__":
     logging.info(f"Input directory: {INPUT_DIR}")
     logging.info(f"Output directory: {OUTPUT_DIR}")
 
-    # Get user input for the number of pages per split
-    while True:
-        try:
-            pages_per_split = int(input("Enter the number of pages per split: "))
-            if pages_per_split > 0:
-                break
-            else:
-                print("Please enter a positive number of pages.")
-        except ValueError:
-            print("Invalid input. Please enter a number.")
-    logging.info(f"Pages per split: {pages_per_split}")
-
-    monitor_directory(INPUT_DIR, pages_per_split)
+    monitor_directory(INPUT_DIR)
