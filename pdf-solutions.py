@@ -146,7 +146,12 @@ def monitor_directory(input_dir):
             for filename in os.listdir(input_dir):
                 if filename.endswith(".pdf") and filename not in processed_files:
                     input_pdf = os.path.join(input_dir, filename)
-                    logging.info(f"New file detected: {input_pdf}")
+                    
+                    # Read the PDF to get the number of pages
+                    reader = PdfReader(input_pdf)
+                    total_pages = len(reader.pages)
+                    
+                    logging.info(f"New file detected: {input_pdf} with {total_pages} pages")
                     process_pdf(input_pdf)
                     processed_files.add(filename)
                     save_processed_file(filename)
