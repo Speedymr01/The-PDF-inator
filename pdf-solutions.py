@@ -151,8 +151,10 @@ def monitor_directory(input_dir):
 
     while True:
         try:
+            new_files_found = False
             for filename in os.listdir(input_dir):
                 if filename.endswith(".pdf") and filename not in processed_files:
+                    new_files_found = True
                     input_pdf = os.path.join(input_dir, filename)
                     
                     # Read the PDF to get the number of pages
@@ -165,6 +167,10 @@ def monitor_directory(input_dir):
                     save_processed_file(filename)
                     print(f"Processed {filename}")
                     logging.info(f"Processed {filename}")
+            
+            if not new_files_found:
+                print("No new files found.")
+                logging.info("No new files found.")
         except Exception as e:
             logging.error(f"Error monitoring directory {input_dir}: {e}")
 
