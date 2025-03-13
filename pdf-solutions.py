@@ -38,6 +38,9 @@ def split_pdf(input_path, output_dir, pages_per_split):
         input_path (str): Path to the input PDF file.
         output_dir (str): Directory to save the split PDF files.
         pages_per_split (int): Number of pages to include in each split file.
+
+    Returns:
+        int: Number of split files created.
     """
     os.makedirs(output_dir, exist_ok=True)
     logging.info(f"Splitting PDF: {input_path} into {pages_per_split}-page files.")
@@ -47,6 +50,7 @@ def split_pdf(input_path, output_dir, pages_per_split):
 
     start_page = 0
     file_number = 1
+    splits = 0
 
     while start_page < total_pages:
         end_page = min(start_page + pages_per_split, total_pages)
@@ -63,6 +67,9 @@ def split_pdf(input_path, output_dir, pages_per_split):
 
         start_page = end_page
         file_number += 1
+        splits += 1
+
+    return splits
 
 def ocr_pdf(pdf_path, output_path):
     """
@@ -117,8 +124,8 @@ def process_pdf(input_pdf):
         # Set the output directory to the ./output/ folder
         output_dir = os.path.join(OUTPUT_DIR, f"SPLIT - {input_file_name}")
 
-        split_pdf(input_pdf, output_dir, pages_per_split)
-        logging.info(f"PDF split successfully! Files are located in: {output_dir}")
+        splits = split_pdf(input_pdf, output_dir, pages_per_split)
+        logging.info(f"PDF split successfully! Files are located in: {output_dir}. There were {splits} files created.")
 
         # Ask if the user wants to perform OCR
         ocr_choice = input(f"Do you want to perform OCR on the split files for {input_pdf}? (y/n): ").lower()
@@ -134,6 +141,7 @@ def process_pdf(input_pdf):
                 output_txt_path = os.path.join(ocr_output_dir, ocr_output_base)  # Output path for OCR'd text, inside ocr_output dir
 
                 ocr_pdf(pdf_path, output_txt_path)
+            logging.info(f"OCR completed for all split files in {output_dir}. There are {splits} OCRs in total.")
     except Exception as e:
         logging.error(f"Error processing PDF {input_pdf}: {e}")
 
