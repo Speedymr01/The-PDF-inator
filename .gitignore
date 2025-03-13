@@ -176,9 +176,9 @@ cython_debug/
 
 
 
-./output/
-./logs/
-./pdfs/
-!./output/README.md
-!./pdfs/README.md
-!./logs/README.md
+output/
+logs/
+pdfs/
+!output/README.md
+!pdfs/README.md
+!logs/README.md
