@@ -56,4 +56,7 @@ Logs are saved in the `logs` directory. Check the log files for detailed informa
 
 ## License
 
-This project is licensed under the CC BY-NC-ND 4.0 (Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International) License.
+PDF-Consolidator © 2025 by M R and H Y is licensed under CC BY-NC-ND 4.0. To view a copy of this license, visit https://creativecommons.org/licenses/by-nc-nd/4.0/, or access the `LICENCE` file for a copy.
+
+Link to Creators: https://github.com/Speedymr01, https://github.com/Haozheeyu
+Link to this project: https://github.com/Speedymr01/pdf-consolidator
