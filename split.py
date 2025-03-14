@@ -6,7 +6,7 @@ import time
 
 # Constants
 LOG_DIR = 'logs'
-PROCESSED_FILES_PATH = 'processed.txt'
+PROCESSED_FILES_PATH_SPLIT = 'processed_split.txt'
 SLEEP_INTERVAL = 10  # seconds
 INPUT_DIR = './pdfs'
 OUTPUT_DIR = './output'
@@ -17,16 +17,16 @@ os.makedirs(os.path.dirname(log_filename), exist_ok=True)
 logging.basicConfig(filename=log_filename, level=logging.INFO, 
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
-def load_processed_files():
-    """Load the set of processed files from the processed.txt file."""
-    if os.path.exists(PROCESSED_FILES_PATH):
-        with open(PROCESSED_FILES_PATH, 'r') as file:
+def load_processed_files(processed_files_path):
+    """Load the set of processed files from the specified file."""
+    if os.path.exists(processed_files_path):
+        with open(processed_files_path, 'r') as file:
             return set(file.read().splitlines())
     return set()
 
-def save_processed_file(filename):
-    """Save a processed file name to the processed.txt file."""
-    with open(PROCESSED_FILES_PATH, 'a') as file:
+def save_processed_file(filename, processed_files_path):
+    """Save a processed file name to the specified file."""
+    with open(processed_files_path, 'a') as file:
         file.write(filename + '\n')
 
 def split_pdf(input_path, output_dir, pages_per_split):
@@ -70,12 +70,13 @@ def split_pdf(input_path, output_dir, pages_per_split):
 
     return splits
 
-def process_pdf(input_pdf):
+def process_pdf(input_pdf, relative_path):
     """
     Process a PDF file by splitting it.
 
     Args:
         input_pdf (str): Path to the input PDF file.
+        relative_path (str): Relative path from the input directory to the PDF file.
     """
     try:
         # Get user input for the number of pages per split
@@ -94,7 +95,7 @@ def process_pdf(input_pdf):
         input_file_name = os.path.splitext(os.path.basename(input_pdf))[0]
         
         # Set the output directory to the ./output/ folder
-        output_dir = os.path.join(OUTPUT_DIR, f"SPLIT - {input_file_name}")
+        output_dir = os.path.join(OUTPUT_DIR, f"SPLIT - {relative_path}/{input_file_name}")
 
         splits = split_pdf(input_pdf, output_dir, pages_per_split)
         logging.info(f"PDF split successfully! Files are located in: {output_dir}. There were {splits} files created.")
@@ -104,26 +105,38 @@ def process_pdf(input_pdf):
 
 def monitor_directory(input_dir):
     """Monitor the input directory for new PDF files and process them if they haven't been processed."""
-    processed_files = load_processed_files()
+    processed_files = load_processed_files(PROCESSED_FILES_PATH_SPLIT)
 
     while True:
         try:
             new_files_found = False
-            for filename in os.listdir(input_dir):
-                if filename.endswith(".pdf") and filename not in processed_files:
-                    new_files_found = True
-                    input_pdf = os.path.join(input_dir, filename)
-                    
-                    # Read the PDF to get the number of pages
-                    reader = PdfReader(input_pdf)
-                    total_pages = len(reader.pages)
-                    
-                    logging.info(f"New file detected: {input_pdf} with {total_pages} pages")
-                    process_pdf(input_pdf)
-                    processed_files.add(filename)
-                    save_processed_file(filename)
-                    print(f"Processed {filename}")
-                    logging.info(f"Processed {filename}")
+            for root, _, files in os.walk(input_dir):
+                for filename in files:
+                    if filename.endswith(".pdf"):
+                        input_pdf_path = os.path.join(root, filename)
+                        relative_path = os.path.relpath(root, input_dir)
+                        
+                        # Create a unique key for the file based on its full path
+                        file_key = os.path.join(relative_path, filename)
+                        
+                        if file_key not in processed_files:
+                            new_files_found = True
+                            
+                            logging.info(f"New file detected: {input_pdf_path}")
+                            
+                            # Read the PDF to get the number of pages
+                            try:
+                                reader = PdfReader(input_pdf_path)
+                                total_pages = len(reader.pages)
+                                logging.info(f"{input_pdf_path} has {total_pages} pages")
+                            except Exception as e:
+                                logging.error(f"Could not read {input_pdf_path}: {e}")
+                                continue  # Skip to the next file
+
+                            process_pdf(input_pdf_path, relative_path)
+                            processed_files.add(file_key)
+                            save_processed_file(file_key, PROCESSED_FILES_PATH_SPLIT)
+                            print(f"Processed {filename} in {relative_path}")
             
             if not new_files_found:
                 print("No new files found.")
@@ -133,8 +146,13 @@ def monitor_directory(input_dir):
 
         time.sleep(SLEEP_INTERVAL)  # Check for new files every SLEEP_INTERVAL seconds
 
-if __name__ == "__main__":
+def main():
+
+
     logging.info(f"Input directory: {INPUT_DIR}")
     logging.info(f"Output directory: {OUTPUT_DIR}")
 
     monitor_directory(INPUT_DIR)
+
+if __name__ == "__main__":
+    main()
