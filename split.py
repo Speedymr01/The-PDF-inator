@@ -2,7 +2,6 @@ import os
 import logging
 from datetime import datetime
 from pypdf import PdfReader, PdfWriter
-import fitz  # PyMuPDF for text extraction
 import time
 
 # Constants
@@ -71,36 +70,9 @@ def split_pdf(input_path, output_dir, pages_per_split):
 
     return splits
 
-def ocr_pdf(pdf_path, output_path):
-    """
-    Extracts text from a PDF file using PyMuPDF.
-
-    Args:
-        pdf_path (str): Path to the input PDF file.
-        output_path (str): Path to save the extracted text file.
-    """
-    try:
-        # Open the PDF
-        pdf_document = fitz.open(pdf_path)
-        text = ""
-
-        # Extract text from each page
-        for page_number in range(len(pdf_document)):
-            page = pdf_document[page_number]
-            text += page.get_text() + "\n"
-
-        # Save the extracted text to a file
-        output_txt_file = output_path + ".txt"
-        with open(output_txt_file, "w", encoding="utf-8") as f:
-            f.write(text)
-        logging.info(f"OCR completed for {pdf_path}. Output saved to {output_txt_file}")
-
-    except (fitz.FileDataError, fitz.FileNotFoundError, fitz.PdfError) as e:
-        logging.error(f"Error during OCR for {pdf_path}: {e}")
-
 def process_pdf(input_pdf):
     """
-    Process a PDF file by splitting it and performing OCR on the split files.
+    Process a PDF file by splitting it.
 
     Args:
         input_pdf (str): Path to the input PDF file.
@@ -127,21 +99,6 @@ def process_pdf(input_pdf):
         splits = split_pdf(input_pdf, output_dir, pages_per_split)
         logging.info(f"PDF split successfully! Files are located in: {output_dir}. There were {splits} files created.")
 
-        # Ask if the user wants to perform OCR
-        ocr_choice = input(f"Do you want to perform OCR on the split files for {input_pdf}? (y/n): ").lower()
-        if ocr_choice == 'y':
-            # Perform OCR on the split files
-            ocr_output_dir = os.path.join(output_dir, "ocr_output")
-            os.makedirs(ocr_output_dir, exist_ok=True)
-            logging.info(f"OCR output will be saved in: {ocr_output_dir}")
-
-            for filename in [f for f in os.listdir(output_dir) if f.endswith(".pdf") and f.startswith("split_")]:
-                pdf_path = os.path.join(output_dir, filename)
-                ocr_output_base = os.path.splitext(filename)[0]  # Remove .pdf extension
-                output_txt_path = os.path.join(ocr_output_dir, ocr_output_base)  # Output path for OCR'd text, inside ocr_output dir
-
-                ocr_pdf(pdf_path, output_txt_path)
-            logging.info(f"OCR completed for all split files in {output_dir}. There are {splits} OCRs in total.")
     except Exception as e:
         logging.error(f"Error processing PDF {input_pdf}: {e}")
 
