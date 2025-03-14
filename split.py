@@ -12,10 +12,14 @@ INPUT_DIR = './pdfs'
 OUTPUT_DIR = './output'
 
 # Configure logging with dynamic filename
-log_filename = os.path.join(LOG_DIR, f'pdf_processing_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log')
+log_filename = os.path.join(LOG_DIR, f'pdf_processing_{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.log')
 os.makedirs(os.path.dirname(log_filename), exist_ok=True)
-logging.basicConfig(filename=log_filename, level=logging.INFO, 
-                    format='%(asctime)s - %(levelname)s - %(message)s')
+try:
+    logging.basicConfig(filename=log_filename, level=logging.INFO, 
+                        format='%(asctime)s - %(levelname)s - %(message)s')
+except OSError as e:
+    print(f"Error setting up logging: {e}.  Using default logging configuration.")
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def load_processed_files(processed_files_path):
     """Load the set of processed files from the specified file."""
@@ -95,7 +99,7 @@ def process_pdf(input_pdf, relative_path):
         input_file_name = os.path.splitext(os.path.basename(input_pdf))[0]
         
         # Set the output directory to the ./output/ folder
-        output_dir = os.path.join(OUTPUT_DIR, f"SPLIT - {relative_path}/{input_file_name}")
+        output_dir = os.path.join(OUTPUT_DIR,  relative_path, input_file_name)
 
         splits = split_pdf(input_pdf, output_dir, pages_per_split)
         logging.info(f"PDF split successfully! Files are located in: {output_dir}. There were {splits} files created.")
@@ -118,7 +122,8 @@ def monitor_directory(input_dir):
                         
                         # Create a unique key for the file based on its full path
                         file_key = os.path.join(relative_path, filename)
-                        
+                        processed_files = load_processed_files(PROCESSED_FILES_PATH_SPLIT)
+
                         if file_key not in processed_files:
                             new_files_found = True
                             
