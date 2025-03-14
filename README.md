@@ -9,7 +9,7 @@ This project provides a set of scripts to process PDF files, including splitting
 
 ## Requirements
 
-- Python 3.x
+- Python 3.12.x
 - PyMuPDF
 - PyPDF2
 
