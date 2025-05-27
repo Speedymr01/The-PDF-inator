@@ -129,7 +129,7 @@ def ocr_pdf(input_file, output_file=None):
 class PDFToolGUI:
     def __init__(self, root):
         self.root = root
-        self.root.title("PDF Manipulator")
+        self.root.title("The PDFinator")
         self.file_list = []
         self.create_widgets()
         self.refresh_file_list()

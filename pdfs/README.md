@@ -6,7 +6,7 @@ This folder is designated for storing PDF files that you want to process with th
 
 1. Place the PDF files you want to process into this folder.
 2. Make sure the files are valid, non-password-protected PDF documents.
-3. Start the tool (`manipulator.py`) and use the GUI to select and process the PDFs as needed.
+3. Start the tool (`PDFinator.py`) and use the GUI to select and process the PDFs as needed.
 
 ## Notes
 

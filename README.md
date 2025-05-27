@@ -1,6 +1,6 @@
 # PDF Consolidator
 
-This project provides a GUI and CLI toolset for processing PDF files, including splitting, merging, deleting, and duplicating pages. All actions are logged for traceability.
+This application is a desktop tool for processing PDF files, featuring both a graphical user interface (GUI) and a command-line interface (CLI). It allows users to split, merge, delete, and duplicate PDF pages, with all actions logged for traceability.
 
 ## Features
 
@@ -19,8 +19,7 @@ This project provides a GUI and CLI toolset for processing PDF files, including 
 - PyPDF2
 - Tkinter (usually included with Python)
 - Pypdf
-- Pymupdf
-- Fitz
+- Pymupdf (fitz)
 - Frontend
 
 ## Installation
@@ -33,7 +32,7 @@ This project provides a GUI and CLI toolset for processing PDF files, including 
 
 1. Run the script:
     ```sh
-    python manipulator.py
+    python PDFinator.py
     ```
 2. Use the graphical interface to select and process PDF files in the `pdfs` directory.
 
@@ -42,7 +41,7 @@ This project provides a GUI and CLI toolset for processing PDF files, including 
 1. Place PDF files in the `pdfs` directory.
 2. Run:
     ```sh
-    python manipulator.py
+    python PDFinator.py
     ```
 3. The script will monitor for new PDFs and prompt you for actions in the terminal.
 
@@ -76,8 +75,9 @@ Check these logs for detailed information about processing tasks and any errors.
 
 ## License
 
-PDF-Consolidator © 2025 by M R and H Y is licensed under CC BY-NC-ND 4.0.  
-To view a copy of this license, visit https://creativecommons.org/licenses/by-nc-nd/4.0/, or see the `LICENCE` file.
 
-Creators: [Speedymr01](https://github.com/Speedymr01), [Haozheeyu](https://github.com/Haozheeyu)  
-Project: [https://github.com/Speedymr01/pdf-consolidator](https://github.com/Speedymr01/pdf-consolidator)
+The PDFinator  © 2025 by M R is licensed under CC BY-ND 4.0.
+To view a copy of this license, visit https://creativecommons.org/licenses/by-nd/4.0/, or see the `LICENCE` file.
+
+Creator: @Speedymr01 at [https://github.com/Speedymr01]
+Project: [https://github.com/Speedymr01/The-PDF-inator]
