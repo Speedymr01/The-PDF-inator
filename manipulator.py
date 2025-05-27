@@ -6,9 +6,10 @@ from datetime import datetime
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk, simpledialog
 
+import fitz  # PyMuPDF for text extraction
+
 INPUT_DIR = "./pdfs"
 OUTPUT_DIR = "./output"
-PROCESSED_FILE = "processed-manipulator.txt"
 
 os.makedirs(INPUT_DIR, exist_ok=True)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -31,16 +32,6 @@ def get_output_subdir(pdf_path):
     subdir = os.path.join(OUTPUT_DIR, base_name)
     os.makedirs(subdir, exist_ok=True)
     return subdir
-
-def load_processed_files():
-    if not os.path.exists(PROCESSED_FILE):
-        return set()
-    with open(PROCESSED_FILE, "r") as f:
-        return set(line.strip() for line in f)
-
-def save_processed_file(filepath):
-    with open(PROCESSED_FILE, "a") as f:
-        f.write(filepath + "\n")
 
 def merge_pdfs(input1, input2, output_file=None):
     logger.info(f"Attempting to merge: {input1} + {input2}")
@@ -112,6 +103,29 @@ def duplicate_page(input_file, page_number, output_file=None):
     except Exception as e:
         logger.error(f"Error duplicating page {page_number} from {input_file}: {e}", exc_info=True)
 
+def ocr_pdf(input_file, output_file=None):
+    """
+    Extracts text from each page of the PDF using PyMuPDF and saves it as a .txt file.
+    """
+    if not os.path.exists(input_file):
+        logger.error(f"File not found for OCR: {input_file}")
+        return
+    try:
+        output_dir = get_output_subdir(input_file)
+        if output_file is None:
+            output_file = os.path.join(output_dir, f"{os.path.splitext(os.path.basename(input_file))[0]}_ocr.txt")
+
+        logger.info(f"Starting OCR (text extraction) for {input_file}")
+        doc = fitz.open(input_file)
+        with open(output_file, "w", encoding="utf-8") as out_txt:
+            for i, page in enumerate(doc):
+                text = page.get_text()
+                out_txt.write(f"--- Page {i+1} ---\n{text}\n\n")
+                logger.info(f"OCR text extracted for page {i+1}")
+        logger.info(f"OCR complete for {input_file}, saved as {output_file}")
+    except Exception as e:
+        logger.error(f"Error during OCR for {input_file}: {e}", exc_info=True)
+
 class PDFToolGUI:
     def __init__(self, root):
         self.root = root
@@ -134,6 +148,7 @@ class PDFToolGUI:
         ttk.Button(button_frame, text="Delete Page", command=self.delete_page).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Duplicate Page", command=self.duplicate_page).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Merge", command=self.merge_pdfs).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="OCR", command=self.ocr_pdf).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Refresh", command=self.refresh_file_list).pack(side=tk.LEFT, padx=5)
 
     def refresh_file_list(self):
@@ -184,6 +199,15 @@ class PDFToolGUI:
             return
         merge_pdfs(pdf1, pdf2_path)
         messagebox.showinfo("Success", "PDFs merged.")
+
+    def ocr_pdf(self):
+        pdf = self.get_selected_file()
+        if pdf:
+            try:
+                ocr_pdf(pdf)
+                messagebox.showinfo("Success", "Text extraction complete. Text file saved in output folder.")
+            except Exception as e:
+                messagebox.showerror("Error", str(e))
 
 if __name__ == "__main__":
     root = tk.Tk()

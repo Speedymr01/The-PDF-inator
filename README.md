@@ -1,62 +1,83 @@
 # PDF Consolidator
 
-This project provides a set of scripts to process PDF files, including splitting PDFs into smaller files and performing OCR (Optical Character Recognition) on them.
+This project provides a GUI and CLI toolset for processing PDF files, including splitting, merging, deleting, and duplicating pages. All actions are logged for traceability.
 
 ## Features
 
-- **Split PDF**: Split a PDF file into multiple smaller files, each containing a specified number of pages.
-- **OCR PDF**: Extract text from PDF files using OCR and save the extracted text to a file.
+- **Split PDF**: Split a PDF file into individual pages.
+- **Merge PDFs**: Merge two PDF files into one.
+- **Delete Page**: Remove a specific page from a PDF.
+- **Duplicate Page**: Duplicate a specific page in a PDF.
+- **Processed File Tracking**: Keeps track of processed files to avoid duplicate work.
+- **Logging**: All operations are logged in the `logs` directory with timestamped filenames.
+- **GUI**: User-friendly interface for all PDF operations.
+- **CLI Monitoring**: Automatically detects new PDFs in the `pdfs` folder and prompts for actions.
 
 ## Requirements
 
 - Python 3.12.x
-- PyMuPDF
 - PyPDF2
+- Tkinter (usually included with Python)
+- Pypdf
+- Pymupdf
+- Fitz
+- Frontend
 
 ## Installation
 
-1. Double click on the `install.bat` file. this installs the required python modules.
+1. Double-click on the `install.bat` file to install the required Python modules.
 
 ## Usage
 
+### GUI
+
 1. Run the script:
     ```sh
-    python pdf-solutions.py
+    python manipulator.py
     ```
+2. Use the graphical interface to select and process PDF files in the `pdfs` directory.
 
-2. Follow the prompts to provide the input PDF file path and the number of pages per split.
+### CLI (Automatic Monitoring)
 
-3. Optionally, choose to perform OCR on the split PDF files.
+1. Place PDF files in the `pdfs` directory.
+2. Run:
+    ```sh
+    python manipulator.py
+    ```
+3. The script will monitor for new PDFs and prompt you for actions in the terminal.
 
 ## Output
 
-The output files will be saved in the `output` directory. The structure of the output directory is as follows:
+Processed files are saved in the `output` directory, organized by the original PDF's name.
 
 ```
 output/
-└── SPLIT - <filename>/
-    ├── split_1.pdf
-    ├── split_2.pdf
-    ├── ...
-    └── ocr_output/
-        ├── split_1.txt
-        ├── split_2.txt
-        ├── ...
+└── <filename>/
+    ├── <filename>_page_1.pdf
+    ├── <filename>_page_2.pdf
+    ├── <filename>_merged.pdf
+    ├── <filename>_deleted.pdf
+    └── <filename>_duplicated.pdf
 ```
 
 ## Logging
 
-Logs are saved in the `logs` directory. Check the log files for detailed information about the processing tasks and any errors encountered.
+Logs are saved in the `logs` directory. Each run creates a log file named like:
+```
+logs/pdf_processing_manipulator_YYYY-MM-DD_HH-MM-SS.log
+```
+Check these logs for detailed information about processing tasks and any errors.
 
 ## Notes
 
-- Ensure that the input PDF files are not password-protected.
-- The OCR functionality requires an internet connection.
+- Ensure that input PDF files are not password-protected.
 - Large PDF files may take longer to process.
+- The OCR feature from previous versions is not included in the current tool. If you need OCR, see previous releases or request integration.
 
 ## License
 
-PDF-Consolidator © 2025 by M R and H Y is licensed under CC BY-NC-ND 4.0. To view a copy of this license, visit https://creativecommons.org/licenses/by-nc-nd/4.0/, or access the `LICENCE` file for a copy.
+PDF-Consolidator © 2025 by M R and H Y is licensed under CC BY-NC-ND 4.0.  
+To view a copy of this license, visit https://creativecommons.org/licenses/by-nc-nd/4.0/, or see the `LICENCE` file.
 
-Link to Creators: https://github.com/Speedymr01, https://github.com/Haozheeyu
-Link to this project: https://github.com/Speedymr01/pdf-consolidator
+Creators: [Speedymr01](https://github.com/Speedymr01), [Haozheeyu](https://github.com/Haozheeyu)  
+Project: [https://github.com/Speedymr01/pdf-consolidator](https://github.com/Speedymr01/pdf-consolidator)
