@@ -2,3 +2,4 @@ pypdf
 pymupdf
 fitz
 frontend
+pypdf2
