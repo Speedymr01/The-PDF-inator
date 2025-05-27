@@ -36,15 +36,6 @@ This application is a desktop tool for processing PDF files, featuring both a gr
     ```
 2. Use the graphical interface to select and process PDF files in the `pdfs` directory.
 
-### CLI (Automatic Monitoring)
-
-1. Place PDF files in the `pdfs` directory.
-2. Run:
-    ```sh
-    python PDFinator.py
-    ```
-3. The script will monitor for new PDFs and prompt you for actions in the terminal.
-
 ## Output
 
 Processed files are saved in the `output` directory, organized by the original PDF's name.
