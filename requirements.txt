@@ -1,5 +1,2 @@
 pypdf
-pymupdf
-fitz
-frontend
-pypdf2
+PyMuPDF
