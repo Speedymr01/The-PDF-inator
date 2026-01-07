@@ -95,9 +95,18 @@ def duplicate_page(input_file, page_number, output_file=None):
 
         reader = PyPDF2.PdfReader(input_file)
         writer = PyPDF2.PdfWriter()
-        for page in reader.pages:
-            writer.add_page(page)
+        
+        # Add pages up to and including the page to duplicate
+        for i in range(page_number):
+            writer.add_page(reader.pages[i])
+        
+        # Add the duplicate of the specified page right after the original
         writer.add_page(reader.pages[page_number - 1])
+        
+        # Add remaining pages after the duplicated page
+        for i in range(page_number, len(reader.pages)):
+            writer.add_page(reader.pages[i])
+            
         with open(output_file, "wb") as f:
             writer.write(f)
     except Exception as e:
@@ -194,11 +203,52 @@ class PDFToolGUI:
         pdf1 = self.get_selected_file()
         if not pdf1:
             return
-        pdf2_path = filedialog.askopenfilename(initialdir=INPUT_DIR, title="Select second PDF to merge", filetypes=[("PDF files", "*.pdf")])
-        if not pdf2_path:
+        
+        # Get list of available PDFs excluding the currently selected one
+        available_pdfs = [f for f in self.file_list if os.path.join(INPUT_DIR, f) != pdf1]
+        
+        if not available_pdfs:
+            messagebox.showerror("Error", "No other PDFs available in the pdfs directory to merge with.")
             return
-        merge_pdfs(pdf1, pdf2_path)
-        messagebox.showinfo("Success", "PDFs merged.")
+        
+        # Create a selection dialog
+        selection_window = tk.Toplevel(self.root)
+        selection_window.title("Select PDF to merge with")
+        selection_window.geometry("400x300")
+        
+        tk.Label(selection_window, text="Select the second PDF to merge:").pack(pady=10)
+        
+        pdf_listbox = tk.Listbox(selection_window, height=10)
+        pdf_listbox.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+        
+        for pdf in available_pdfs:
+            pdf_listbox.insert(tk.END, pdf)
+        
+        selected_pdf = [None]  # Use list to allow modification in nested function
+        
+        def on_select():
+            selection = pdf_listbox.curselection()
+            if not selection:
+                messagebox.showerror("Error", "Please select a PDF to merge.")
+                return
+            selected_pdf[0] = os.path.join(INPUT_DIR, available_pdfs[selection[0]])
+            selection_window.destroy()
+        
+        def on_cancel():
+            selection_window.destroy()
+        
+        button_frame = tk.Frame(selection_window)
+        button_frame.pack(pady=10)
+        
+        tk.Button(button_frame, text="Select", command=on_select).pack(side=tk.LEFT, padx=5)
+        tk.Button(button_frame, text="Cancel", command=on_cancel).pack(side=tk.LEFT, padx=5)
+        
+        # Wait for the selection window to close
+        self.root.wait_window(selection_window)
+        
+        if selected_pdf[0]:
+            merge_pdfs(pdf1, selected_pdf[0])
+            messagebox.showinfo("Success", "PDFs merged.")
 
     def ocr_pdf(self):
         pdf = self.get_selected_file()
