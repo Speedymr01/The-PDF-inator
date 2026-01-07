@@ -16,11 +16,10 @@ This application is a desktop tool for processing PDF files, featuring both a gr
 ## Requirements
 
 - Python 3.12.x
-- PyPDF2
-- Tkinter (usually included with Python)
-- Pypdf
-- Pymupdf (fitz)
-- Frontend
+- pypdf
+- PyMuPDF
+- pycryptodome
+
 
 ## Installation
 
@@ -62,7 +61,6 @@ Check these logs for detailed information about processing tasks and any errors.
 
 - Ensure that input PDF files are not password-protected.
 - Large PDF files may take longer to process.
-- The OCR feature from previous versions is not included in the current tool. If you need OCR, see previous releases or request integration.
 
 ## License
 
