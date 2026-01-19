@@ -18,10 +18,11 @@ A comprehensive PDF manipulation tool with an intuitive graphical interface. The
 - **Multi-PDF Merge** - Select unlimited PDFs for merging in custom order
 - **Real-time Updates** - File list refreshes automatically after operations
 
-### Smart File Organization
-- **Intuitive Naming** - Clear, descriptive output filenames
-- **Organized Output** - Single files save to main folder, multiple files use subdirectories
-- **Subdirectory Support** - Works with PDFs in nested folders
+- Python 3.12.x
+- pypdf
+- PyMuPDF
+- pycryptodome
+
 
 ## Installation
 
@@ -181,11 +182,16 @@ pip install pycryptodome
 
 ## Logging
 
-All operations are logged to timestamped files in the `logs/` directory:
-- Operation details and progress
-- Error messages and stack traces
-- Performance information
-- File processing statistics
+Logs are saved in the `logs` directory. Each run creates a log file named like:
+```
+logs/pdf_processing_manipulator_YYYY-MM-DD_HH-MM-SS.log
+```
+Check these logs for detailed information about processing tasks and any errors.
+
+## Notes
+
+- Ensure that input PDF files are not password-protected.
+- Large PDF files may take longer to process.
 
 ## License
 
