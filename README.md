@@ -18,6 +18,8 @@ A comprehensive PDF manipulation tool with an intuitive graphical interface. The
 - **Multi-PDF Merge** - Select unlimited PDFs for merging in custom order
 - **Real-time Updates** - File list refreshes automatically after operations
 
+### Dependancies
+
 - Python 3.12.x
 - pypdf
 - PyMuPDF
