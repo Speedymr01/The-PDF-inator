@@ -2,7 +2,7 @@
 
 All notable changes to The PDFinator project will be documented in this file.
 
-## [3.0.1] - 2025-01-19
+## [3.0.1] - 2026-02-28
 
 ### 📚 Documentation Update
 
@@ -41,7 +41,7 @@ This patch release focuses exclusively on documentation improvements and consist
 - All log formats verified against logging configuration
 - All features verified against implementation
 
-## [3.0.0] - 2025-01-19
+## [3.0.0] - 2026-01-19
 
 ### 🎉 Major Release - Complete Architecture Overhaul
 
