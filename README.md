@@ -18,13 +18,10 @@ A comprehensive PDF manipulation tool with an intuitive graphical interface. The
 - **Multi-PDF Merge** - Select unlimited PDFs for merging in custom order
 - **Real-time Updates** - File list refreshes automatically after operations
 
-### Dependancies
-
-- Python 3.12.x
-- pypdf
-- PyMuPDF
-- pycryptodome
-
+### Smart File Organization
+- **Intuitive Naming** - Clear, descriptive output filenames
+- **Organized Output** - Single files save to main folder, multiple files use subdirectories
+- **Subdirectory Support** - Works with PDFs in nested folders
 
 ## Installation
 
@@ -45,7 +42,7 @@ A comprehensive PDF manipulation tool with an intuitive graphical interface. The
 
 ### Manual Installation
 ```bash
-pip install pypdf PyMuPDF pycryptodome
+pip install pypdf2 PyMuPDF pycryptodome
 ```
 
 ## Usage
@@ -113,14 +110,23 @@ PDFinator/
 ├── PDFinator.py          # Main application
 ├── requirements.txt      # Python dependencies
 ├── install.bat          # Windows installer
-├── README.md            # This file
+├── README.md            # Main documentation
+├── USAGE.md             # Detailed usage guide
+├── CHANGELOG.md         # Version history
 ├── LICENCE              # License information
+├── SECURITY.md          # Security policy
+├── .gitignore           # Git ignore rules
 ├── pdfs/                # Input PDF directory
-│   ├── document.pdf     # Your PDF files
-│   ├── merged_file.pdf  # Single-file outputs
-│   └── document/        # Multi-file outputs (split pages)
+│   ├── README.md        # Input directory guide
+│   ├── document.pdf     # Your PDF files (example)
+│   ├── merged_file.pdf  # Single-file outputs (example)
+│   └── document/        # Multi-file outputs (example)
 ├── logs/                # Application logs
-└── output/              # Legacy output directory (unused)
+│   ├── README.md        # Logging documentation
+│   └── pdf_processing_*.log  # Log files
+├── output/              # Legacy output directory (unused)
+├── .git/                # Git repository data
+└── .github/             # GitHub configuration
 ```
 
 ## Output Organization
@@ -184,16 +190,13 @@ pip install pycryptodome
 
 ## Logging
 
-Logs are saved in the `logs` directory. Each run creates a log file named like:
-```
-logs/pdf_processing_manipulator_YYYY-MM-DD_HH-MM-SS.log
-```
-Check these logs for detailed information about processing tasks and any errors.
+All operations are logged to timestamped files in the `logs/` directory:
+- Operation details and progress
+- Error messages and stack traces
+- Performance information
+- File processing statistics
 
-## Notes
-
-- Ensure that input PDF files are not password-protected.
-- Large PDF files may take longer to process.
+Log files are named: `pdf_processing_YYYY-MM-DD_HH-MM-SS.log`
 
 ## License
 
