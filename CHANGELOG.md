@@ -2,7 +2,7 @@
 
 All notable changes to The PDFinator project will be documented in this file.
 
-## [3.0.1] - 2026-02-28
+## [3.0.3] - 2026-02-28
 
 ### 📚 Documentation Update
 
