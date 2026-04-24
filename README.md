@@ -9,8 +9,11 @@ A comprehensive PDF manipulation tool with an intuitive graphical interface. The
 - **Merge PDFs** - Combine multiple PDFs in any order
 - **Delete Pages** - Remove specific pages from PDFs
 - **Duplicate Pages** - Copy pages within PDFs
-- **Text Extraction (OCR)** - Extract text content from PDFs
+- **Rotate Pages** - Rotate pages 90°, 180°, or 270°
+- **Text Extraction** - Extract text content from PDFs
 - **Decrypt PDFs** - Remove password protection from encrypted PDFs
+- **Compression** - Reduce PDF file sizes
+- **Metadata Editor** - View and edit PDF metadata
 
 ### User Interface
 - **Visual Tree Structure** - Browse PDFs in an intuitive folder/file hierarchy
@@ -42,7 +45,7 @@ A comprehensive PDF manipulation tool with an intuitive graphical interface. The
 
 ### Manual Installation
 ```bash
-pip install pypdf2 PyMuPDF pycryptodome
+pip install PyPDF2 PyMuPDF pycryptodome
 ```
 
 ## Usage
@@ -80,7 +83,7 @@ Place your PDF files in the `pdfs/` directory. The application will automaticall
 
 #### Text Extraction
 1. Select a PDF
-2. Click "OCR"
+2. Click "Text"
 3. Text is extracted and saved as: `filename - Text.txt`
 
 #### Decryption
@@ -117,14 +120,11 @@ PDFinator/
 ├── SECURITY.md          # Security policy
 ├── .gitignore           # Git ignore rules
 ├── pdfs/                # Input PDF directory
-│   ├── README.md        # Input directory guide
 │   ├── document.pdf     # Your PDF files (example)
 │   ├── merged_file.pdf  # Single-file outputs (example)
 │   └── document/        # Multi-file outputs (example)
 ├── logs/                # Application logs
-│   ├── README.md        # Logging documentation
 │   └── pdf_processing_*.log  # Log files
-├── output/              # Legacy output directory (unused)
 ├── .git/                # Git repository data
 └── .github/             # GitHub configuration
 ```
@@ -132,7 +132,7 @@ PDFinator/
 ## Output Organization
 
 - **Single File Operations**: Save directly to `pdfs/` folder
-  - Merge, Delete Page, Duplicate Page, Decrypt, OCR
+  - **Text Extraction**
 - **Multiple File Operations**: Save to subdirectories in `pdfs/`
   - Split (creates multiple page files)
 
@@ -186,7 +186,7 @@ pip install pycryptodome
 - **PyPDF2** - Core PDF manipulation
 - **PyMuPDF (fitz)** - Text extraction and advanced PDF operations
 - **pycryptodome** - Encryption/decryption support
-- **tkinter** - GUI framework (included with Python)
+- **customtkinter** - Modern GUI framework
 
 ## Logging
 
@@ -200,7 +200,7 @@ Log files are named: `pdf_processing_YYYY-MM-DD_HH-MM-SS.log`
 
 ## License
 
-The PDFinator © 2025 by M R is licensed under CC BY-ND 4.0.
+The PDFinator © 2026 by M R is licensed under CC BY-ND 4.0.
 To view a copy of this license, visit https://creativecommons.org/licenses/by-nd/4.0/, or see the `LICENCE` file.
 
 Creator: @Speedymr01 at [https://github.com/Speedymr01]

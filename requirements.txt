@@ -1,3 +1,4 @@
-pypdf2
+PyPDF2
 PyMuPDF
 pycryptodome
+customtkinter

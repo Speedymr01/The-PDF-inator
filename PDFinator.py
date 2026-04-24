@@ -1,33 +1,70 @@
 """
 The PDFinator - A comprehensive PDF manipulation tool
-Supports splitting, merging, page operations, OCR, and decryption
+Supports splitting, merging, page operations, text extraction, and decryption
 """
 
 import os
-import logging
+import sys
 from datetime import datetime
-import tkinter as tk
-from tkinter import messagebox, ttk, simpledialog
+import logging
 
-import PyPDF2
-import fitz  # PyMuPDF for text extraction
-
-# Constants
-INPUT_DIR = "./pdfs"
-OUTPUT_DIR = "./output"
+# Setup early logging to catch startup errors
 LOGS_DIR = "./logs"
+os.makedirs(LOGS_DIR, exist_ok=True)
+log_filename = datetime.now().strftime("pdf_processing_%Y-%m-%d_%H-%M-%S.log")
+log_path = os.path.join(LOGS_DIR, log_filename)
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.FileHandler(log_path, encoding="utf-8"),
+        logging.StreamHandler(sys.stderr)
+    ]
+)
+
+logger = logging.getLogger(__name__)
+
+# Now import dependencies with error logging
+try:
+    import customtkinter as cctk
+    from customtkinter import CTkToplevel, CTkInputDialog
+except Exception as e:
+    logger.error(f"Failed to import customtkinter: {e}")
+    raise
+
+try:
+    from tkinter import messagebox
+except Exception as e:
+    logger.error(f"Failed to import tkinter: {e}")
+    raise
+
+try:
+    import PyPDF2
+except Exception as e:
+    logger.error(f"Failed to import PyPDF2: {e}")
+    raise
+
+try:
+    import fitz  # PyMuPDF for text extraction
+except Exception as e:
+    logger.error(f"Failed to import PyMuPDF (fitz): {e}")
+    raise
+
+INPUT_DIR = "./pdfs"
 
 # Test pycryptodome availability
 try:
     from Crypto.Cipher import AES
     CRYPTO_AVAILABLE = True
 except ImportError:
+    logger.warning("PyCryptodome not available - some encrypted PDFs may not work")
     CRYPTO_AVAILABLE = False
 
 # Setup directories and logging
 def setup_environment():
     """Initialize directories and logging configuration"""
-    for directory in [INPUT_DIR, OUTPUT_DIR, LOGS_DIR]:
+    for directory in [INPUT_DIR, LOGS_DIR]:
         os.makedirs(directory, exist_ok=True)
     
     log_filename = datetime.now().strftime("pdf_processing_%Y-%m-%d_%H-%M-%S.log")
@@ -98,6 +135,33 @@ def merge_pdfs(input1, input2, output_file=None):
     merger.write(output_file)
     merger.close()
     logger.info(f"Merge complete: {os.path.basename(output_file)}")
+    return True
+
+@safe_file_operation
+def perform_multi_merge(pdf_list, output_file=None):
+    """Merge multiple PDF files"""
+    if len(pdf_list) < 2:
+        return False
+    
+    output_dir = get_single_output_dir()
+    if output_file is None:
+        pdf_names = [get_base_name(pdf) for pdf in pdf_list]
+        output_filename = "(" + ")+(".join(pdf_names) + ").pdf"
+        output_file = os.path.join(output_dir, output_filename)
+
+    logger.info(f"Starting multi-merge of {len(pdf_list)} PDFs")
+    merger = PyPDF2.PdfMerger()
+    
+    for i, pdf_path in enumerate(pdf_list):
+        if os.path.exists(pdf_path):
+            logger.info(f"Adding PDF {i+1}/{len(pdf_list)}: {os.path.basename(pdf_path)}")
+            merger.append(pdf_path)
+        else:
+            logger.error(f"File not found: {pdf_path}")
+    
+    merger.write(output_file)
+    merger.close()
+    logger.info(f"Multi-merge complete: {output_file}")
     return True
 
 @safe_file_operation
@@ -302,56 +366,203 @@ def _decrypt_with_pypdf2(reader, output_file):
         logger.error(f"PyPDF2 decryption failed: {e}")
         return False
 
+@safe_file_operation
+def rotate_pdf(input_file, rotation, output_file=None):
+    """Rotate pages in PDF by 90, 180, or 270 degrees"""
+    if not os.path.exists(input_file):
+        logger.error(f"File not found: {input_file}")
+        return False
+    
+    valid_rotations = {90, 180, 270}
+    if rotation not in valid_rotations:
+        logger.error(f"Invalid rotation: {rotation}. Must be 90, 180, or 270")
+        return False
+    
+    output_dir = get_single_output_dir()
+    if output_file is None:
+        base_name = get_base_name(input_file)
+        output_file = os.path.join(output_dir, f"{base_name} ({rotation}° Rotated).pdf")
+
+    logger.info(f"Rotating {os.path.basename(input_file)} by {rotation}°")
+    
+    doc = fitz.open(input_file)
+    for page in doc:
+        page.set_rotation(page.rotation + rotation)
+    
+    doc.save(output_file)
+    doc.close()
+    logger.info(f"Rotation complete: {os.path.basename(output_file)}")
+    return True
+
+@safe_file_operation
+def get_pdf_metadata(input_file):
+    """Get metadata from PDF"""
+    if not os.path.exists(input_file):
+        logger.error(f"File not found: {input_file}")
+        return None
+    
+    doc = fitz.open(input_file)
+    metadata = doc.metadata
+    doc.close()
+    return metadata
+
+@safe_file_operation
+def set_pdf_metadata(input_file, metadata, output_file=None):
+    """Set metadata for PDF"""
+    if not os.path.exists(input_file):
+        logger.error(f"File not found: {input_file}")
+        return False
+    
+    output_dir = get_single_output_dir()
+    if output_file is None:
+        base_name = get_base_name(input_file)
+        output_file = os.path.join(output_dir, f"{base_name} (Metadata Updated).pdf")
+
+    logger.info(f"Updating metadata for {os.path.basename(input_file)}")
+    
+    doc = fitz.open(input_file)
+    if metadata.get('title'):
+        doc.set_metadata({'/Title': metadata['title']})
+    if metadata.get('author'):
+        doc.set_metadata({'/Author': metadata['author']})
+    if metadata.get('subject'):
+        doc.set_metadata({'/Subject': metadata['subject']})
+    if metadata.get('creator'):
+        doc.set_metadata({'/Creator': metadata['creator']})
+    if metadata.get('producer'):
+        doc.set_metadata({'/Producer': metadata['producer']})
+    
+    doc.save(output_file)
+    doc.close()
+    logger.info(f"Metadata update complete: {os.path.basename(output_file)}")
+    return True
+
+@safe_file_operation
+def compress_pdf(input_file, compression_level=6, output_file=None):
+    """Compress PDF to reduce file size"""
+    if not os.path.exists(input_file):
+        logger.error(f"File not found: {input_file}")
+        return False
+    
+    if not 0 <= compression_level <= 9:
+        compression_level = 6
+    
+    output_dir = get_single_output_dir()
+    if output_file is None:
+        base_name = get_base_name(input_file)
+        output_file = os.path.join(output_dir, f"{base_name} (Compressed).pdf")
+
+    logger.info(f"Compressing {os.path.basename(input_file)} (level {compression_level})")
+    
+    doc = fitz.open(input_file)
+    doc.save(
+        output_file,
+        garbage=4,
+        deflate=True,
+        compression=compression_level,
+        clean=True
+    )
+    doc.close()
+    
+    original_size = os.path.getsize(input_file)
+    compressed_size = os.path.getsize(output_file)
+    ratio = (1 - compressed_size / original_size) * 100 if original_size > 0 else 0
+    logger.info(f"Compression complete: {ratio:.1f}% size reduction")
+    return True
+
 class PDFToolGUI:
     """Main GUI application for PDF manipulation tools"""
     
     def __init__(self, root):
         self.root = root
         self.root.title("The PDFinator")
-        self.file_paths = {}  # Maps tree item IDs to full file paths
+        self.root.geometry("900x650")
+        
+        cctk.set_appearance_mode("dark")
+        cctk.set_default_color_theme("blue")
+        
+        self.file_paths = {}
         self._setup_gui()
         self.refresh_file_list()
+        self._bind_shortcuts()
 
     def _setup_gui(self):
         """Initialize the GUI components"""
-        main_frame = ttk.Frame(self.root)
-        main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-
-        # File tree view
-        self.tree = ttk.Treeview(main_frame, height=10)
-        self.tree.pack(fill=tk.BOTH, expand=True)
-        self.tree.heading('#0', text='PDF Files', anchor='w')
-
-        # Button panel
-        self._create_button_panel(main_frame)
+        header_frame = cctk.CTkFrame(self.root)
+        header_frame.pack(fill="x", padx=20, pady=(20, 10))
+        
+        title_label = cctk.CTkLabel(
+            header_frame,
+            text="The PDFinator",
+            font=cctk.CTkFont(size=24, weight="bold")
+        )
+        title_label.pack(side="left", pady=10)
+        
+        main_frame = cctk.CTkFrame(self.root)
+        main_frame.pack(fill="both", expand=True, padx=20, pady=10)
+        
+        self.file_tree = cctk.CTkTextbox(main_frame, wrap="none", font=cctk.CTkFont(size=12))
+        self.file_tree.pack(side="left", fill="both", expand=True)
+        
+        scrollbar = cctk.CTkScrollbar(main_frame, command=self.file_tree.yview)
+        scrollbar.pack(side="right", fill="y")
+        self.file_tree.configure(yscrollcommand=scrollbar.set)
+        
+        self._create_button_panel(self.root)
+        
+        status_frame = cctk.CTkFrame(self.root)
+        status_frame.pack(fill="x", padx=20, pady=(0, 20))
+        
+        self.status_label = cctk.CTkLabel(
+            status_frame,
+            text="Ready",
+            font=cctk.CTkFont(size=12)
+        )
+        self.status_label.pack(side="left", pady=10)
 
     def _create_button_panel(self, parent):
         """Create the button panel with all PDF operations"""
-        button_frame = ttk.Frame(parent)
-        button_frame.pack(fill=tk.X, pady=5)
+        button_frame = cctk.CTkFrame(parent)
+        button_frame.pack(fill="x", padx=20, pady=10)
 
         buttons = [
             ("Split", self._split_pdf),
             ("Delete Page", self._delete_page),
             ("Duplicate Page", self._duplicate_page),
+            ("Rotate", self._rotate_pdf),
             ("Merge", self._merge_pdfs),
-            ("OCR", self._ocr_pdf),
+            ("Text", self._extract_text),
             ("Decrypt", self._decrypt_pdf),
+            ("Compress", self._compress_pdf),
+            ("Metadata", self._edit_metadata),
             ("Refresh", self.refresh_file_list)
         ]
 
         for text, command in buttons:
-            ttk.Button(button_frame, text=text, command=command).pack(side=tk.LEFT, padx=5)
+            cctk.CTkButton(
+                button_frame,
+                text=text,
+                command=command,
+                width=100
+            ).pack(side="left", padx=5, pady=10)
+
+    def _bind_shortcuts(self):
+        """Bind keyboard shortcuts"""
+        self.root.bind('<Control-r>', lambda e: self.refresh_file_list())
+        self.root.bind('<Control-s>', lambda e: self._split_pdf())
+        self.root.bind('<Control-d>', lambda e: self._delete_page())
+        self.root.bind('<Control-m>', lambda e: self._merge_pdfs())
+        self.root.bind('<Control-t>', lambda e: self._extract_text())
 
     def refresh_file_list(self):
         """Refresh the file tree with current PDF files"""
-        # Clear existing items
-        for item in self.tree.get_children():
-            self.tree.delete(item)
-        
+        self.file_tree.delete("1.0", "end")
         self.file_paths = {}
+        
         dir_structure = self._build_directory_structure()
-        self._populate_tree('', dir_structure)
+        self._populate_display('', dir_structure, 0)
+        
+        self._set_status(f"Loaded {len(self.file_paths)} PDF(s)")
 
     def _build_directory_structure(self):
         """Build nested dictionary representing directory structure"""
@@ -364,51 +575,51 @@ class PDFToolGUI:
                     rel_path = os.path.relpath(full_path, INPUT_DIR)
                     path_parts = rel_path.split(os.sep)
                     
-                    # Navigate to correct position in structure
                     current_dict = structure
                     for part in path_parts[:-1]:
                         if part not in current_dict:
                             current_dict[part] = {}
                         current_dict = current_dict[part]
                     
-                    # Add file
                     current_dict[path_parts[-1]] = full_path
         
         return structure
 
-    def _populate_tree(self, parent_id, structure):
-        """Recursively populate tree view from directory structure"""
+    def _populate_display(self, parent_id, structure, indent):
+        """Recursively populate display from directory structure"""
         for name, content in sorted(structure.items()):
+            prefix = "  " * indent
             if isinstance(content, dict):
-                # Directory
-                folder_id = self.tree.insert(parent_id, 'end', text=f"📁 {name}", open=False)
-                self._populate_tree(folder_id, content)
+                self.file_tree.insert("end", f"{prefix}📁 {name}/\n")
+                self.file_tree.tag_add("folder", f"{end}-1l", f"{end}")
+                self._populate_display(name, content, indent + 1)
             else:
-                # PDF file
-                file_id = self.tree.insert(parent_id, 'end', text=f"📄 {name}")
+                file_id = f"file_{len(self.file_paths)}"
                 self.file_paths[file_id] = content
+                self.file_tree.insert("end", f"{prefix}📄 {name}\n")
+                end = self.file_tree.index("end")
+                self.file_tree.tag_add("file", f"{end}-2l", f"{end}")
 
     def _get_selected_file(self):
         """Get the currently selected PDF file path"""
-        selection = self.tree.selection()
-        if not selection:
-            messagebox.showerror("Error", "No file selected.")
+        try:
+            cursor_pos = self.file_tree.index("insert")
+            line_num = int(cursor_pos.split('.')[0])
+            
+            for file_id, path in self.file_paths.items():
+                line_key = f"{line_num}.0"
+                if self.file_tree.get(line_key, f"{line_key}+1c").strip():
+                    return path
+            
+            messagebox.showerror("Error", "Please select a PDF file.")
             return None
-        
-        selected_id = selection[0]
-        if selected_id in self.file_paths:
-            return self.file_paths[selected_id]
-        else:
-            messagebox.showerror("Error", "Please select a PDF file, not a folder.")
+        except Exception:
+            messagebox.showerror("Error", "Please select a PDF file.")
             return None
 
-    def _get_page_number(self, operation):
-        """Get page number from user input"""
-        try:
-            return int(simpledialog.askstring(operation, f"Enter page number to {operation.lower()}:"))
-        except (ValueError, TypeError):
-            messagebox.showerror("Error", "Please enter a valid page number.")
-            return None
+    def _set_status(self, message):
+        """Update status label"""
+        self.status_label.configure(text=message)
 
     def _show_success_and_refresh(self, message):
         """Show success message and refresh file list"""
@@ -428,9 +639,14 @@ class PDFToolGUI:
         if not pdf_path:
             return
         
-        page_num = self._get_page_number("Delete Page")
-        if page_num and delete_page(pdf_path, page_num):
-            self._show_success_and_refresh("Page deleted successfully.")
+        page_num = CTkInputDialog(title="Delete Page", text="Enter page number to delete:").get_input()
+        if page_num:
+            try:
+                page_num = int(page_num)
+                if delete_page(pdf_path, page_num):
+                    self._show_success_and_refresh("Page deleted successfully.")
+            except ValueError:
+                messagebox.showerror("Error", "Please enter a valid page number.")
 
     def _duplicate_page(self):
         """Handle page duplication operation"""
@@ -438,12 +654,38 @@ class PDFToolGUI:
         if not pdf_path:
             return
         
-        page_num = self._get_page_number("Duplicate Page")
-        if page_num and duplicate_page(pdf_path, page_num):
-            self._show_success_and_refresh("Page duplicated successfully.")
+        page_num = CTkInputDialog(title="Duplicate Page", text="Enter page number to duplicate:").get_input()
+        if page_num:
+            try:
+                page_num = int(page_num)
+                if duplicate_page(pdf_path, page_num):
+                    self._show_success_and_refresh("Page duplicated successfully.")
+            except ValueError:
+                messagebox.showerror("Error", "Please enter a valid page number.")
 
-    def _ocr_pdf(self):
-        """Handle OCR text extraction operation"""
+    def _rotate_pdf(self):
+        """Handle PDF rotation operation"""
+        pdf_path = self._get_selected_file()
+        if not pdf_path:
+            return
+        
+        rotation = CTkInputDialog(
+            title="Rotate PDF",
+            text="Enter rotation angle (90, 180, or 270):"
+        ).get_input()
+        if rotation:
+            try:
+                rotation = int(rotation)
+                if rotation in {90, 180, 270}:
+                    if rotate_pdf(pdf_path, rotation):
+                        self._show_success_and_refresh(f"PDF rotated {rotation}° successfully.")
+                else:
+                    messagebox.showerror("Error", "Please enter 90, 180, or 270.")
+            except ValueError:
+                messagebox.showerror("Error", "Please enter a valid number.")
+
+    def _extract_text(self):
+        """Handle text extraction operation"""
         pdf_path = self._get_selected_file()
         if pdf_path and ocr_pdf(pdf_path):
             self._show_success_and_refresh("Text extraction complete.")
@@ -454,7 +696,6 @@ class PDFToolGUI:
         if not pdf_path:
             return
         
-        # Get password from user
         use_password = messagebox.askyesno(
             "Password", 
             "Do you want to provide a password?\n(Click 'No' to try common passwords automatically)"
@@ -462,11 +703,10 @@ class PDFToolGUI:
         
         password = None
         if use_password:
-            password = simpledialog.askstring("Password", "Enter PDF password:", show='*')
+            password = CTkInputDialog(title="Password", text="Enter PDF password:").get_input()
             if password is None:
                 return
         
-        # Attempt decryption
         if decrypt_pdf(pdf_path, password):
             self._show_success_and_refresh("PDF decryption complete.")
         else:
@@ -475,164 +715,161 @@ class PDFToolGUI:
                 "Could not decrypt PDF. This may be due to:\n"
                 "• Incorrect password\n"
                 "• PDF not actually encrypted\n"
-                "• Unsupported encryption method\n"
-                "• Missing dependencies\n\n"
+                "• Unsupported encryption method\n\n"
                 "Check the logs for more details."
             )
 
+    def _compress_pdf(self):
+        """Handle PDF compression operation"""
+        pdf_path = self._get_selected_file()
+        if not pdf_path:
+            return
+        
+        level = CTkInputDialog(
+            title="Compress PDF",
+            text="Enter compression level (0-9, default 6):"
+        ).get_input()
+        
+        compression_level = 6
+        if level:
+            try:
+                compression_level = int(level)
+                if not 0 <= compression_level <= 9:
+                    compression_level = 6
+            except ValueError:
+                pass
+        
+        if compress_pdf(pdf_path, compression_level):
+            self._show_success_and_refresh("PDF compressed successfully.")
+
+    def _edit_metadata(self):
+        """Handle metadata editing operation"""
+        pdf_path = self._get_selected_file()
+        if not pdf_path:
+            return
+        
+        metadata = get_pdf_metadata(pdf_path)
+        if not metadata:
+            messagebox.showerror("Error", "Could not read metadata.")
+            return
+        
+        dialog = CTkToplevel(self.root)
+        dialog.title("Edit Metadata")
+        dialog.geometry("500x400")
+        
+        cctk.CTkLabel(dialog, text="Edit PDF Metadata", font=cctk.CTkFont(size=18, weight="bold")).pack(pady=20)
+        
+        fields = ['title', 'author', 'subject', 'creator', 'producer']
+        entries = {}
+        
+        for field in fields:
+            frame = cctk.CTkFrame(dialog)
+            frame.pack(fill="x", padx=20, pady=5)
+            
+            cctk.CTkLabel(frame, text=field.capitalize() + ":", width=80).pack(side="left", padx=5)
+            
+            entry = cctk.CTkEntry(frame)
+            entry.pack(side="left", fill="x", expand=True, padx=5)
+            
+            value = metadata.get(field, '')
+            if value:
+                entry.insert(0, value)
+            
+            entries[field] = entry
+        
+        def save_metadata():
+            new_metadata = {}
+            for field, entry in entries.items():
+                value = entry.get()
+                if value:
+                    new_metadata[field] = value
+            
+            if set_pdf_metadata(pdf_path, new_metadata):
+                messagebox.showinfo("Success", "Metadata saved successfully.")
+                dialog.destroy()
+                self.refresh_file_list()
+            else:
+                messagebox.showerror("Error", "Could not save metadata.")
+        
+        cctk.CTkButton(dialog, text="Save", command=save_metadata).pack(pady=20)
+
     def _merge_pdfs(self):
         """Handle multi-PDF merge operation"""
-        first_pdf = self._get_selected_file()
-        if not first_pdf:
-            return
+        self._set_status("Select PDFs to merge...")
         
-        selected_pdfs = [first_pdf]
-        self._show_merge_selection(selected_pdfs)
-
-    def _show_merge_selection(self, selected_pdfs):
-        """Show PDF selection dialog for merging"""
-        available_pdfs, available_paths = self._get_available_pdfs(selected_pdfs)
+        dialog = CTkToplevel(self.root)
+        dialog.title("Merge PDFs")
+        dialog.geometry("600x450")
         
-        if not available_pdfs:
-            if len(selected_pdfs) >= 2:
-                self._perform_multi_merge(selected_pdfs)
-            else:
-                messagebox.showerror("Error", "Need at least 2 PDFs to merge.")
-            return
-
-        # Create selection dialog
-        dialog = self._create_merge_dialog(selected_pdfs, available_pdfs, available_paths)
-
-    def _get_available_pdfs(self, excluded_paths):
-        """Get list of available PDFs excluding already selected ones"""
-        available_pdfs = []
-        available_paths = []
+        cctk.CTkLabel(
+            dialog,
+            text="Select PDFs to Merge",
+            font=cctk.CTkFont(size=18, weight="bold")
+        ).pack(pady=20)
         
-        def collect_pdfs(parent_id=""):
-            for item_id in self.tree.get_children(parent_id):
-                if item_id in self.file_paths:
-                    file_path = self.file_paths[item_id]
-                    if file_path not in excluded_paths:
-                        rel_path = os.path.relpath(file_path, INPUT_DIR)
-                        available_pdfs.append(rel_path)
-                        available_paths.append(file_path)
-                else:
-                    collect_pdfs(item_id)
+        selected_frame = cctk.CTkFrame(dialog)
+        selected_frame.pack(fill="both", expand=True, padx=20, pady=10)
         
-        collect_pdfs()
-        return available_pdfs, available_paths
-
-    def _create_merge_dialog(self, selected_pdfs, available_pdfs, available_paths):
-        """Create the merge selection dialog"""
-        dialog = tk.Toplevel(self.root)
-        dialog.title(f"Select PDF to merge ({len(selected_pdfs)} selected)")
-        dialog.geometry("600x400")
+        selected_listbox = cctk.CTkTextbox(selected_frame, height=150)
+        selected_listbox.pack(fill="both", expand=True, padx=10, pady=10)
+        selected_listbox.configure(state="disabled")
         
-        # Show currently selected PDFs
-        self._add_selected_pdfs_display(dialog, selected_pdfs)
+        available_frame = cctk.CTkFrame(dialog)
+        available_frame.pack(fill="both", expand=True, padx=20, pady=10)
         
-        # PDF selection listbox
-        tk.Label(dialog, text="Select next PDF to add:", font=("Arial", 10)).pack(pady=(10,5))
-        pdf_listbox = tk.Listbox(dialog, height=8)
-        pdf_listbox.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+        cctk.CTkLabel(available_frame, text="Available PDFs:").pack(anchor='w', padx=10, pady=(10, 5))
         
-        for pdf in available_pdfs:
-            pdf_listbox.insert(tk.END, pdf)
+        available_listbox = cctk.CTkTextbox(available_frame, height=150)
+        available_listbox.pack(fill="both", expand=True, padx=10, pady=(0, 10))
         
-        # Buttons
-        self._add_merge_dialog_buttons(dialog, selected_pdfs, pdf_listbox, available_paths)
+        self._populate_available_pdfs(available_listbox)
         
-        self.root.wait_window(dialog)
-
-    def _add_selected_pdfs_display(self, dialog, selected_pdfs):
-        """Add display of currently selected PDFs to dialog"""
-        info_frame = tk.Frame(dialog)
-        info_frame.pack(fill=tk.X, padx=10, pady=5)
+        button_frame = cctk.CTkFrame(dialog)
+        button_frame.pack(pady=20)
         
-        tk.Label(info_frame, text="Currently selected PDFs (in merge order):", 
-                font=("Arial", 10, "bold")).pack(anchor='w')
+        selected_pdfs = []
         
-        selected_listbox = tk.Listbox(info_frame, height=4)
-        selected_listbox.pack(fill=tk.X, pady=5)
+        def add_to_selection():
+            selection = available_listbox.index("insert")
+            if selection:
+                line = available_listbox.get(f"{selection}.0", f"{selection}.end")
+                dir_struct = self._build_directory_structure()
+                for path in self.file_paths.values():
+                    if line.strip() in path:
+                        selected_pdfs.append(path)
+                        selected_listbox.configure(state="normal")
+                        selected_listbox.insert("end", os.path.relpath(path, INPUT_DIR))
+                        selected_listbox.configure(state="disabled")
+                        break
         
-        for i, pdf_path in enumerate(selected_pdfs):
-            rel_path = os.path.relpath(pdf_path, INPUT_DIR)
-            selected_listbox.insert(tk.END, f"{i+1}. {rel_path}")
-
-    def _add_merge_dialog_buttons(self, dialog, selected_pdfs, pdf_listbox, available_paths):
-        """Add buttons to merge dialog"""
-        def on_next():
-            selection = pdf_listbox.curselection()
-            if not selection:
-                messagebox.showerror("Error", "Please select a PDF to add.")
-                return
-            
-            new_pdf = available_paths[selection[0]]
-            dialog.destroy()
-            self._show_merge_selection(selected_pdfs + [new_pdf])
-
-        def on_merge_now():
+        def do_merge():
             if len(selected_pdfs) < 2:
-                messagebox.showerror("Error", "Need at least 2 PDFs to merge.")
+                messagebox.showerror("Error", "Select at least 2 PDFs.")
                 return
-            dialog.destroy()
-            self._perform_multi_merge(selected_pdfs)
+            if perform_multi_merge(selected_pdfs):
+                messagebox.showinfo("Success", f"Merged {len(selected_pdfs)} PDFs.")
+                dialog.destroy()
+                self.refresh_file_list()
 
-        button_frame = tk.Frame(dialog)
-        button_frame.pack(pady=10)
-        
-        tk.Button(button_frame, text="Next", command=on_next, 
-                 bg="#4CAF50", fg="white").pack(side=tk.LEFT, padx=5)
-        tk.Button(button_frame, text=f"Merge Now ({len(selected_pdfs)} PDFs)", 
-                 command=on_merge_now, bg="#2196F3", fg="white").pack(side=tk.LEFT, padx=5)
-        tk.Button(button_frame, text="Cancel", 
-                 command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        cctk.CTkButton(button_frame, text="Add", command=add_to_selection).pack(side="left", padx=5)
+        cctk.CTkButton(button_frame, text="Merge", command=do_merge).pack(side="left", padx=5)
+        cctk.CTkButton(button_frame, text="Cancel", command=dialog.destroy).pack(side="left", padx=5)
 
-    def _perform_multi_merge(self, pdf_list):
-        """Perform the actual multi-PDF merge operation"""
-        if len(pdf_list) < 2:
-            messagebox.showerror("Error", "Need at least 2 PDFs to merge.")
-            return
-        
-        try:
-            # Single output file - save to main pdfs directory
-            output_dir = get_single_output_dir()
-            pdf_names = [get_base_name(pdf) for pdf in pdf_list]
-            output_filename = "(" + ")+(".join(pdf_names) + ").pdf"
-            output_file = os.path.join(output_dir, output_filename)
-            
-            # Perform merge
-            logger.info(f"Starting multi-merge of {len(pdf_list)} PDFs")
-            merger = PyPDF2.PdfMerger()
-            
-            for i, pdf_path in enumerate(pdf_list):
-                if os.path.exists(pdf_path):
-                    logger.info(f"Adding PDF {i+1}/{len(pdf_list)}: {os.path.basename(pdf_path)}")
-                    merger.append(pdf_path)
+    def _populate_available_pdfs(self, listbox):
+        dir_struct = self._build_directory_structure()
+        def add_entries(structure):
+            for name, content in sorted(structure.items()):
+                if isinstance(content, dict):
+                    add_entries(content)
                 else:
-                    logger.error(f"File not found: {pdf_path}")
-            
-            merger.write(output_file)
-            merger.close()
-            
-            # Show success message
-            display_names = [os.path.basename(pdf) for pdf in pdf_list]
-            message = f"Successfully merged {len(pdf_list)} PDFs:\n\n"
-            message += "\n".join([f"{i+1}. {name}" for i, name in enumerate(display_names)])
-            message += f"\n\nOutput: {output_filename}"
-            
-            messagebox.showinfo("Merge Complete", message)
-            logger.info(f"Multi-merge complete: {output_file}")
-            self.refresh_file_list()
-            
-        except Exception as e:
-            logger.error(f"Multi-merge failed: {e}", exc_info=True)
-            messagebox.showerror("Error", f"Failed to merge PDFs: {str(e)}")
+                    rel = os.path.relpath(content, INPUT_DIR)
+                    listbox.insert('end', rel)
+        add_entries(dir_struct)
 
 # Main Application Entry Point
 def main():
     """Initialize and run the PDFinator application"""
-    root = tk.Tk()
+    root = cctk.CTk()
     app = PDFToolGUI(root)
     root.mainloop()
 

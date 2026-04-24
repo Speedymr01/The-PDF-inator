@@ -2,6 +2,38 @@
 
 All notable changes to The PDFinator project will be documented in this file.
 
+## [4.0.0] - 2026-04-24
+
+### 🚀 Major Release - Modern GUI & New Features
+
+This release introduces a modern GUI with customtkinter and several new PDF operations.
+
+#### Added
+- **customtkinter GUI**: Complete rewrite with modern dark theme
+- **Page Rotation**: Rotate pages 90°, 180°, or 270°
+- **Metadata Editor**: View and edit PDF metadata (title, author, subject, etc.)
+- **Compression**: Reduce PDF file sizes with compression levels 0-9
+- **Keyboard Shortcuts**: Ctrl+R refresh, Ctrl+S split, Ctrl+D delete, Ctrl+M merge, Ctrl+T text
+
+#### Changed
+- **GUI**: Switched from tkinter to customtkinter for modern appearance
+- **OCR → Text**: Renamed "OCR" button to "Text" (actual functionality is text extraction, not OCR)
+- **Package Names**: All documentation now uses correct PyPDF2 capitalization
+- **Early Logging**: Import errors now logged to logs/ directory
+
+#### Removed
+- **Unused OUTPUT_DIR**: Removed unused output directory constant
+
+#### Dependencies Updated
+- Added: customtkinter
+
+### 📚 Documentation Update
+
+#### Changed
+- **README.md**: Updated directory structure, removed dead references
+- **USAGE.md**: Added new feature documentation
+- **Package Name**: Fixed pypdf2 → PyPDF2 in all docs
+
 ## [3.0.3] - 2026-02-28
 
 ### 📚 Documentation Update

@@ -176,11 +176,7 @@ cython_debug/
 
 
 
-output/
 logs/
 pdfs/
-!output/README.md
-!pdfs/README.md
-!logs/README.md
 processed.txt
 processed-manipulator.txt

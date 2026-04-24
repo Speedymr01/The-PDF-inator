@@ -1,15 +1,16 @@
 # The PDFinator - Detailed Usage Guide
 
-This comprehensive guide covers all features and operations available in The PDFinator.
+This comprehensive guide covers all features and operations available in The PDFinator. The PDFinator uses a modern dark theme GUI built with customtkinter.
 
 ## Table of Contents
 1. [Getting Started](#getting-started)
 2. [Interface Overview](#interface-overview)
 3. [File Management](#file-management)
 4. [PDF Operations](#pdf-operations)
-5. [Advanced Features](#advanced-features)
-6. [Troubleshooting](#troubleshooting)
-7. [Tips and Best Practices](#tips-and-best-practices)
+5. [Keyboard Shortcuts](#keyboard-shortcuts)
+6. [Advanced Features](#advanced-features)
+7. [Troubleshooting](#troubleshooting)
+8. [Tips and Best Practices](#tips-and-best-practices)
 
 ## Getting Started
 
@@ -33,6 +34,8 @@ PDFinator/
 
 ### Main Window Components
 
+The PDFinator features a modern dark-themed interface built with customtkinter.
+
 #### File Tree View
 - **📁 Folders**: Expandable directories containing PDFs
 - **📄 PDF Files**: Individual PDF documents
@@ -43,9 +46,12 @@ PDFinator/
 - **Split**: Break PDF into individual pages
 - **Delete Page**: Remove specific pages
 - **Duplicate Page**: Copy pages within PDF
+- **Rotate**: Rotate pages 90°, 180°, or 270°
 - **Merge**: Combine multiple PDFs
-- **OCR**: Extract text content
+- **Text**: Extract text content
 - **Decrypt**: Remove password protection
+- **Compress**: Reduce PDF file size
+- **Metadata**: View and edit PDF metadata
 - **Refresh**: Update file list
 
 ### Visual Indicators
@@ -159,13 +165,13 @@ pdfs/
 
 **Note**: Duplicate page appears immediately after the original
 
-### 4. Text Extraction (OCR)
+### 4. Text Extraction
 
 **Purpose**: Extract text content from PDFs
 
 **Steps**:
 1. Select PDF
-2. Click "OCR"
+2. Click "Text"
 3. Wait for text extraction
 4. Find text file in `pdfs/` folder
 
@@ -212,6 +218,71 @@ Content from page 2...
 - **Dual Method**: PyMuPDF and PyPDF2 fallback
 - **Error Recovery**: Handles partial decryption failures
 - **Unencrypted Handling**: Copies unencrypted PDFs as-is
+
+### 6. PDF Rotation
+
+**Purpose**: Rotate pages in a PDF
+
+**Steps**:
+1. Select PDF
+2. Click "Rotate"
+3. Choose rotation angle (90°, 180°, or 270°)
+4. Confirm operation
+
+**Output**: `filename (90° Rotated).pdf`
+
+**Features**:
+- **Multiple Angles**: 90°, 180°, and 270° options
+- **All Pages**: Rotates all pages in the PDF
+
+### 7. PDF Compression
+
+**Purpose**: Reduce PDF file size
+
+**Steps**:
+1. Select PDF
+2. Click "Compress"
+3. Choose compression level (0-9)
+4. Wait for compression
+
+**Output**: `filename (Compressed).pdf`
+
+**compression Levels**:
+- **0-3**: Lower compression, better quality
+- **4-6**: Balanced (default)
+- **7-9**: Higher compression, smaller file size
+
+### 8. Metadata Editor
+
+**Purpose**: View and edit PDF metadata
+
+**Steps**:
+1. Select PDF
+2. Click "Metadata"
+3. View current metadata
+4. Edit desired fields
+5. Save
+
+**Fields**:
+- **Title**: Document title
+- **Author**: Document author
+- **Subject**: Document subject
+- **Creator**: Application that created the PDF
+- **Producer**: Application that produced the PDF
+
+**Output**: `filename (Metadata Updated).pdf`
+
+### Keyboard Shortcuts
+
+The PDFinator supports keyboard shortcuts for quick access:
+
+| Shortcut | Action |
+|----------|--------|
+| Ctrl+R | Refresh file list |
+| Ctrl+S | Split PDF |
+| Ctrl+D | Delete Page |
+| Ctrl+M | Merge PDFs |
+| Ctrl+T | Extract Text |
 
 ## Advanced Features
 

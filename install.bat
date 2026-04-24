@@ -18,13 +18,16 @@ echo Python found. Installing dependencies...
 echo.
 
 echo Installing PyPDF2...
-pip install pypdf2
+pip install PyPDF2
 
 echo Installing PyMuPDF...
 pip install PyMuPDF
 
 echo Installing pycryptodome...
 pip install pycryptodome
+
+echo Installing customtkinter...
+pip install customtkinter
 
 echo.
 echo ========================================
